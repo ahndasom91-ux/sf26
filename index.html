@@ -2,19 +2,501 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>2026 Summer Festival 만족도 조사 [방콕]</title>
-<script>
-  // 짧은 주소 → Apps Script 설문 링크로 이동 (?t=테스트키 등 쿼리는 그대로 전달)
-  var TARGET = 'https://script.google.com/macros/s/AKfycbzD_bLwQFgr_N01W6HVsx_N4gRLFsrsa3zr-HdybjupgTm8w1gTJjj63LSq5iEa4emU/exec';
-  location.replace(TARGET + location.search);
-</script>
-<meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzD_bLwQFgr_N01W6HVsx_N4gRLFsrsa3zr-HdybjupgTm8w1gTJjj63LSq5iEa4emU/exec">
-<style>body{font-family:system-ui,sans-serif;text-align:center;padding:60px 20px;color:#333}a{color:#1f5fa8}</style>
+<style>
+  :root {
+    --bg: #f3f5f9;
+    --card: #ffffff;
+    --ink: #1c2430;
+    --muted: #5f6b7a;
+    --line: #e1e6ee;
+    --brand: #1f5fa8;
+    --brand-dark: #174b86;
+    --brand-soft: #e6effa;
+    --accent: #f08a24;
+    --danger: #d64545;
+    --danger-soft: #fdecec;
+    --ok: #1e9e6a;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 4px 14px rgba(20, 30, 50, .05);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.55;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 0 16px 40px; }
+  .hidden { display: none !important; }
+
+  /* 헤더 */
+  .hero { padding: 28px 0 14px; }
+  .hero .eyebrow { font-size: 13px; letter-spacing: .08em; color: var(--brand); font-weight: 700; text-transform: uppercase; }
+  .hero h1 { margin: 4px 0 0; font-size: 24px; line-height: 1.3; font-weight: 800; }
+  .hero .sub { margin-top: 6px; color: var(--muted); font-size: 14px; }
+  .badge-test { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; background: #fff3e0; color: #b35a00; font-size: 12px; font-weight: 700; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 18px; margin: 14px 0; }
+  .notice { background: var(--brand-soft); border: 1px solid #cfdff3; color: #1b3a5e; border-radius: 12px; padding: 14px 16px; font-size: 15px; }
+  .meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 14px; margin-top: 14px; }
+  .meta span::before { content: "•"; margin-right: 6px; color: var(--brand); }
+
+  .btn { display: block; width: 100%; border: 0; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 700; cursor: pointer; transition: background .15s, transform .05s; font-family: inherit; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:active { transform: scale(.99); background: var(--brand-dark); }
+  .btn-primary[disabled] { background: #9db4d0; cursor: default; }
+  .btn-ghost { background: #fff; color: var(--brand); border: 1px solid #c9d8ec; }
+
+  /* 진행 상태 */
+  .progress { position: sticky; top: 0; z-index: 5; background: rgba(243,245,249,.96); backdrop-filter: blur(6px); padding: 10px 16px 8px; margin: 0 -16px; border-bottom: 1px solid var(--line); }
+  .progress .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .progress .row b { color: var(--ink); }
+  .bar { height: 8px; background: #dde3ec; border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), #4b8fd9); border-radius: 999px; transition: width .25s; }
+
+  /* 섹션 구분 */
+  .section-title { margin: 26px 0 6px; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: var(--brand); text-transform: uppercase; }
+  .section-title small { display: block; font-weight: 500; letter-spacing: 0; color: var(--muted); text-transform: none; margin-top: 2px; }
+
+  /* 문항 */
+  .q { scroll-margin-top: 72px; }
+  .q.err { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(214,69,69,.12); }
+  .q.sub-q { margin-top: -6px; border-top-left-radius: 6px; border-top-right-radius: 6px; background: #fbfcfe; }
+  .q-head { display: flex; align-items: flex-start; gap: 10px; }
+  .q-no { flex: 0 0 auto; min-width: 30px; height: 30px; border-radius: 9px; background: var(--brand); color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0 8px; white-space: nowrap; }
+  .sub-q .q-no { background: #fff; color: var(--brand); border: 2px solid var(--brand); }
+  .q-tag { display: inline-block; font-size: 12px; font-weight: 700; color: var(--brand); background: var(--brand-soft); border-radius: 6px; padding: 1px 7px; margin-right: 6px; vertical-align: 2px; }
+  .q-title { font-size: 17px; font-weight: 700; line-height: 1.4; }
+  .sub-q .q-title { font-size: 16px; font-weight: 600; }
+  .q-req { color: var(--danger); font-weight: 800; margin-left: 2px; }
+  .q-opt { color: var(--muted); font-weight: 600; font-size: 13px; margin-left: 4px; }
+  .q-desc { margin: 8px 0 0 40px; color: var(--muted); font-size: 14px; }
+  .q-body { margin-top: 14px; }
+  .q-msg { display: none; margin-top: 10px; color: var(--danger); font-size: 14px; font-weight: 600; }
+  .q.err .q-msg { display: block; }
+
+  .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .opt { position: relative; border: 2px solid var(--line); background: #fff; border-radius: 12px; height: 54px; font-size: 19px; font-weight: 800; color: #3a4552; cursor: pointer; transition: all .12s; font-family: inherit; }
+  .scale.p10 .opt { height: 46px; font-size: 17px; border-radius: 10px; }
+  .opt:active { transform: scale(.97); }
+  .opt.sel { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(31,95,168,.3); }
+  .opt.sel::after { content: "✓"; position: absolute; top: -9px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .scale-ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .scale-ends b { color: var(--ink); }
+  .picked { margin-top: 8px; font-size: 14px; color: var(--brand); font-weight: 700; min-height: 20px; }
+  .skip { margin-top: 10px; width: 100%; height: 40px; border: 2px dashed #c9d2de; background: #fafbfd; border-radius: 10px; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; font-family: inherit; }
+  .skip.sel { border-style: solid; border-color: #8a96a6; background: #8a96a6; color: #fff; }
+
+  .sub-item { padding: 12px 0; border-top: 1px dashed var(--line); }
+  .sub-item:first-child { border-top: 0; padding-top: 0; }
+  .sub-label { font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .sub-label .picked { margin: 0; font-size: 13px; text-align: right; }
+
+  textarea { width: 100%; border: 2px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; resize: vertical; min-height: 96px; background: #fff; color: var(--ink); }
+  textarea:focus { outline: none; border-color: var(--brand); }
+  textarea.short { min-height: 64px; }
+  .counter { text-align: right; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .counter.over { color: var(--danger); font-weight: 700; }
+
+  .alert { display: none; border-radius: 12px; padding: 14px 16px; margin: 14px 0; font-size: 15px; }
+  .alert.danger { display: block; background: var(--danger-soft); border: 1px solid #f3c2c2; color: #8d2323; }
+  .alert .btn { margin-top: 10px; padding: 12px; font-size: 15px; }
+
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1c2430; color: #fff; padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  .toast.show { opacity: 1; }
+
+  .done { text-align: center; padding: 36px 18px; }
+  .done .ico { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; background: var(--ok); }
+  .done .ico.grey { background: #8a96a6; }
+  .done h2 { margin: 0 0 8px; font-size: 21px; }
+  .done p { color: var(--muted); margin: 0; }
+  .done .btn { margin-top: 18px; }
+
+  .spin { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -3px; margin-right: 6px; }
+  .spin.dark { border-color: rgba(31,95,168,.25); border-top-color: var(--brand); }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .loading { text-align: center; color: var(--muted); padding: 40px 0; font-size: 15px; }
+  .foot { text-align: center; color: #98a3b3; font-size: 12px; margin-top: 24px; }
+  .author { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
+</style>
 </head>
 <body>
-  <p>설문 페이지로 이동 중입니다…</p>
-  <p>자동으로 이동하지 않으면 <a href="https://script.google.com/macros/s/AKfycbzD_bLwQFgr_N01W6HVsx_N4gRLFsrsa3zr-HdybjupgTm8w1gTJjj63LSq5iEa4emU/exec">여기</a>를 눌러주세요.</p>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">2026 Summer Festival</div>
+    <h1 id="title">만족도 조사 [방콕]</h1>
+    <div class="sub">행사 참여 소감을 들려주세요.</div>
+    <span id="testBadge" class="badge-test hidden">테스트 모드 — 응답이 테스트 탭에 저장됩니다</span>
+  </header>
+
+  <!-- 상태 확인 중 -->
+  <section id="screen-loading">
+    <div class="card loading"><span class="spin dark"></span>설문을 불러오는 중입니다…</div>
+  </section>
+
+  <!-- 시작 화면 -->
+  <section id="screen-intro" class="hidden">
+    <div class="card">
+      <div class="notice" id="noticeText"></div>
+      <div class="meta">
+        <span>소요 시간 약 5분</span>
+        <span id="metaCount"></span>
+        <span>로그인 불필요</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btnStart">설문 시작하기</button>
+  </section>
+
+  <!-- 설문 화면 -->
+  <section id="screen-form" class="hidden">
+    <div class="progress">
+      <div class="row"><span>진행 상태</span><span><b id="progText">0</b> / <span id="progTotal">0</span> 필수 응답</span></div>
+      <div class="bar"><i id="progBar"></i></div>
+    </div>
+    <div id="questions"></div>
+    <div id="submitAlert" class="alert"></div>
+    <button class="btn btn-primary" id="btnSubmit">제출하기</button>
+    <div class="foot"><span class="q-req">*</span> 표시는 필수 문항입니다. 주관식 문항은 모두 선택입니다.</div>
+  </section>
+
+  <!-- 완료 화면 -->
+  <section id="screen-done" class="hidden">
+    <div class="card done">
+      <div class="ico">✓</div>
+      <h2>제출이 완료되었습니다</h2>
+      <p id="thanksText"></p>
+    </div>
+  </section>
+
+  <!-- 이미 참여 / 접수 전 / 종료 / 오류 -->
+  <section id="screen-blocked" class="hidden">
+    <div class="card done">
+      <div class="ico grey" id="blockIco">!</div>
+      <h2 id="blockTitle"></h2>
+      <p id="blockText"></p>
+      <button class="btn btn-ghost hidden" id="btnReload">다시 시도</button>
+    </div>
+  </section>
+
+  <div class="author" id="authorLine"></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="questions.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  var params = new URLSearchParams(location.search);
+  var tParam = params.get('t') || '';
+  var apiUrl = (window.SF_API_URL || API_URL);
+
+  var fields = fieldList();
+  var fieldById = {};
+  fields.forEach(function (f) { fieldById[f.id] = f; });
+  var requiredTotal = fields.filter(function (f) { return f.required; }).length;
+  var reqQ = QUESTIONS.filter(function (q) { return q.required; }).length;
+  var optQ = QUESTIONS.length - reqQ;
+
+  var state = { requestId: null, answers: {}, sending: false, isTest: false, keyDone: '', keyDraft: '' };
+
+  function newRequestId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
+    var s = ''; var a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    for (var i = 0; i < 32; i++) s += a[Math.floor(Math.random() * a.length)];
+    return s;
+  }
+  function loadDraft() {
+    try {
+      var d = JSON.parse(store.get(state.keyDraft) || 'null');
+      if (d && d.requestId && d.answers && d.schema === SCHEMA_VERSION) { state.requestId = d.requestId; state.answers = d.answers; return; }
+    } catch (e) {}
+    state.requestId = newRequestId();
+  }
+  function saveDraft() { store.set(state.keyDraft, JSON.stringify({ requestId: state.requestId, answers: state.answers, schema: SCHEMA_VERSION })); }
+
+  function show(id) {
+    ['screen-loading', 'screen-intro', 'screen-form', 'screen-done', 'screen-blocked'].forEach(function (s) { $(s).classList.toggle('hidden', s !== id); });
+    window.scrollTo(0, 0);
+  }
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function pickedText(points, v) {
+    return points === 5 ? v + '점 · ' + SCALE_LABELS_5[v] : v + '점';
+  }
+
+  /* ── 렌더링 ── */
+  function scaleHtml(id, points, skippable, skipLabel) {
+    var h = '<div class="scale p' + points + '" role="radiogroup" data-id="' + id + '">';
+    for (var v = 1; v <= points; v++) {
+      var lab = points === 5 ? v + '점 ' + SCALE_LABELS_5[v] : v + '점';
+      h += '<button type="button" class="opt" role="radio" aria-checked="false" data-id="' + id + '" data-v="' + v + '" aria-label="' + esc(lab) + '">' + v + '</button>';
+    }
+    h += '</div><div class="scale-ends"><span><b>1</b> 매우 불만족</span><span><b>' + points + '</b> 매우 만족</span></div>';
+    if (skippable) h += '<button type="button" class="skip" data-id="' + id + '" data-v="skip">' + esc(skipLabel) + ' (해당 없음)</button>';
+    return h;
+  }
+  function render() {
+    var html = '';
+    var lastPoints = null;
+    QUESTIONS.forEach(function (q) {
+      if (q.type !== 'text' && q.points !== lastPoints) {
+        lastPoints = q.points;
+        html += '<div class="section-title">' + (q.points === 10 ? '총평 · 1~10점' : '세부 평가 · 1~5점') + '<small>' +
+          (q.points === 10 ? '1점(매우 불만족)부터 10점(매우 만족)까지 점수를 선택해주세요.' : '1점(매우 불만족)부터 5점(매우 만족)까지 선택해주세요.') + '</small></div>';
+      }
+      var isSub = /-/.test(q.no);
+      var req = q.required ? '<span class="q-req" aria-label="필수">*</span>' : '<span class="q-opt">(선택)</span>';
+      html += '<div class="card q' + (isSub ? ' sub-q' : '') + '" id="q-' + q.id + '">';
+      html += '<div class="q-head"><div class="q-no">' + esc(q.no) + '</div><div class="q-title">' + (isSub ? '' : '<span class="q-tag">' + esc(q.area) + '</span>') + esc(q.title) + req + '</div></div>';
+      if (q.desc) html += '<div class="q-desc">' + esc(q.desc) + '</div>';
+      html += '<div class="q-body">';
+      if (q.type === 'scale') {
+        html += scaleHtml(q.id, q.points, false) + '<div class="picked" id="picked-' + q.id + '"></div>';
+      } else if (q.type === 'group') {
+        q.items.forEach(function (it) {
+          html += '<div class="sub-item" id="sub-' + it.id + '"><div class="sub-label"><span>' + esc(it.label) + (q.required ? '<span class="q-req">*</span>' : '') + '</span><span class="picked" id="picked-' + it.id + '"></span></div>' +
+            scaleHtml(it.id, q.points, !!q.skippable, q.skipLabel || '') + '</div>';
+        });
+      } else {
+        html += '<textarea id="ta-' + q.id + '" class="' + (q.max <= 200 ? 'short' : '') + '" maxlength="' + q.max + '" placeholder="' + (q.required ? '내용을 입력해주세요' : '자유롭게 작성해주세요') + ' (최대 ' + q.max + '자)"></textarea>';
+        html += '<div class="counter" id="cnt-' + q.id + '">0 / ' + q.max + '자</div>';
+      }
+      html += '<div class="q-msg" id="msg-' + q.id + '"></div>';
+      html += '</div></div>';
+    });
+    $('questions').innerHTML = html;
+    $('progTotal').textContent = requiredTotal;
+
+    // 복원
+    fields.forEach(function (f) {
+      var v = state.answers[f.id];
+      if (f.type === 'scale' && v) paintScale(f.id, v);
+      if (f.type === 'text' && v) { $('ta-' + f.id).value = v; updateCounter(f.id); }
+    });
+    updateProgress();
+
+    $('questions').addEventListener('click', function (ev) {
+      var b = ev.target.closest('.opt, .skip'); if (!b) return;
+      var id = b.getAttribute('data-id'), raw = b.getAttribute('data-v');
+      var v = raw === 'skip' ? 'skip' : parseInt(raw, 10);
+      state.answers[id] = v; paintScale(id, v); clearErr(id); saveDraft(); updateProgress();
+    });
+    $('questions').addEventListener('input', function (ev) {
+      var ta = ev.target; if (ta.tagName !== 'TEXTAREA') return;
+      var id = ta.id.replace('ta-', '');
+      state.answers[id] = ta.value; updateCounter(id); clearErr(id); saveDraft(); updateProgress();
+    });
+  }
+  function paintScale(id, v) {
+    var f = fieldById[id];
+    var btns = document.querySelectorAll('.opt[data-id="' + id + '"]');
+    for (var i = 0; i < btns.length; i++) {
+      var on = parseInt(btns[i].getAttribute('data-v'), 10) === v;
+      btns[i].classList.toggle('sel', on); btns[i].setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+    var sk = document.querySelector('.skip[data-id="' + id + '"]');
+    if (sk) sk.classList.toggle('sel', v === 'skip');
+    var p = $('picked-' + id); if (p) p.textContent = v === 'skip' ? (f.skipLabel || '해당 없음') : pickedText(f.points, v);
+  }
+  function updateCounter(id) {
+    var f = fieldById[id];
+    var len = (state.answers[id] || '').length;
+    var c = $('cnt-' + id); c.textContent = len + ' / ' + f.max + '자'; c.classList.toggle('over', len > f.max);
+  }
+  function updateProgress() {
+    var n = 0;
+    fields.forEach(function (f) { if (f.required && isAnswered(f)) n++; });
+    $('progText').textContent = n; $('progBar').style.width = Math.round(n / requiredTotal * 100) + '%';
+  }
+  function isAnswered(f) {
+    var v = state.answers[f.id];
+    if (f.type === 'scale') return (f.skippable && v === 'skip') || (v >= 1 && v <= f.points);
+    return !!(v && String(v).trim());
+  }
+  function setErr(qid, msg) {
+    $('q-' + qid).classList.add('err');
+    var m = $('msg-' + qid);
+    if (!m.textContent) m.textContent = msg;
+  }
+  function clearErr(id) {
+    var f = fieldById[id];
+    if (!f) return;
+    var siblings = fields.filter(function (x) { return x.qid === f.qid; });
+    var allOk = siblings.every(function (s) { return !s.required || isAnswered(s); });
+    if (allOk && groupHasScore(f.qid)) { $('q-' + f.qid).classList.remove('err'); $('msg-' + f.qid).textContent = ''; }
+  }
+  /** 건너뛰기 허용 묶음은 최소 1개 점수가 있어야 한다 */
+  function groupHasScore(qid) {
+    var members = fields.filter(function (x) { return x.qid === qid && x.type === 'scale' && x.skippable; });
+    if (!members.length) return true;
+    return members.some(function (m) { var v = state.answers[m.id]; return v >= 1 && v <= m.points; });
+  }
+
+  /* ── 검증 / 제출 ── */
+  function validate() {
+    var first = null, badQ = {};
+    document.querySelectorAll('.q.err').forEach(function (el) { el.classList.remove('err'); });
+    document.querySelectorAll('.q-msg').forEach(function (el) { el.textContent = ''; });
+    fields.forEach(function (f) {
+      var bad = null;
+      if (f.type === 'scale') {
+        if (f.required && !isAnswered(f)) bad = f.skippable ? '모든 항목에 점수를 선택하거나 "' + f.skipLabel + '"을 선택해주세요.' : (f.qid === f.id ? '응답을 선택해주세요.' : '모든 항목에 응답해주세요.');
+      } else {
+        var v = String(state.answers[f.id] || '').trim();
+        if (f.required && !v) bad = '내용을 입력해주세요.';
+        else if (v.length > f.max) bad = '최대 ' + f.max + '자까지 입력할 수 있습니다.';
+      }
+      if (bad) { badQ[f.qid] = true; setErr(f.qid, bad); if (!first) first = f.qid; }
+    });
+    QUESTIONS.forEach(function (q) {
+      if (q.type === 'group' && q.skippable && q.required && !badQ[q.id] && !groupHasScore(q.id)) {
+        badQ[q.id] = true; setErr(q.id, '최소 한 곳 이상 점수를 선택해주세요. (모두 "' + q.skipLabel + '"일 수 없습니다)'); if (!first) first = q.id;
+      }
+    });
+    if (first) {
+      $('q-' + first).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('응답하지 않은 문항이 ' + Object.keys(badQ).length + '개 있습니다');
+      return false;
+    }
+    return true;
+  }
+  function buildPayload() {
+    var answers = {};
+    fields.forEach(function (f) {
+      var v = state.answers[f.id];
+      answers[f.id] = f.type === 'scale' ? (v === undefined ? '' : v) : String(v || '').trim();
+    });
+    var p = { requestId: state.requestId, answers: answers, schema: SCHEMA_VERSION };
+    if (state.isTest && tParam) p.test = tParam;
+    return p;
+  }
+  function setSending(on) {
+    state.sending = on;
+    var b = $('btnSubmit');
+    b.disabled = on; b.innerHTML = on ? '<span class="spin"></span>제출 중…' : '제출하기';
+  }
+  function showAlert(msg, retry) {
+    var a = $('submitAlert');
+    a.className = 'alert danger';
+    a.innerHTML = esc(msg) + (retry ? '<button type="button" class="btn btn-ghost" id="btnRetry">다시 시도</button>' : '');
+    if (retry) $('btnRetry').addEventListener('click', submit);
+    a.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function hideAlert() { var a = $('submitAlert'); a.className = 'alert'; a.innerHTML = ''; }
+
+  function apiFetch(url, opts, timeoutMs) {
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+    opts = opts || {};
+    if (ctrl) opts.signal = ctrl.signal;
+    opts.redirect = 'follow';
+    return fetch(url, opts).then(function (res) {
+      return res.text().then(function (text) {
+        var json;
+        try { json = JSON.parse(text); }
+        catch (e) {
+          if (/Authorization|권한|승인|액세스|Google|Script function not found/i.test(text)) throw new Error('서버가 아직 승인되지 않았습니다. 담당자가 Apps Script 편집기에서 setup()을 실행해 권한을 승인해야 합니다.');
+          throw new Error('서버 응답을 해석할 수 없습니다 (HTTP ' + res.status + ').');
+        }
+        return json;
+      });
+    }).catch(function (e) {
+      if (e && e.name === 'AbortError') throw new Error('서버 응답이 ' + Math.round(timeoutMs / 1000) + '초 안에 오지 않았습니다. 네트워크 상태를 확인하고 다시 시도해주세요.');
+      throw e;
+    }).finally(function () { if (timer) clearTimeout(timer); });
+  }
+
+  function submit() {
+    if (state.sending) return;
+    hideAlert();
+    if (!validate()) return;
+    setSending(true);
+    var payload = buildPayload();
+    window.__submitCalls = (window.__submitCalls || 0) + 1; window.__lastPayload = payload;
+    apiFetch(apiUrl, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }, 45000)
+      .then(function (res) { setSending(false); onResult(res); })
+      .catch(function (err) {
+        setSending(false);
+        showAlert('전송에 실패했습니다. ' + (err && err.message ? err.message : '네트워크 상태를 확인한 뒤 다시 시도해주세요.') + ' 입력하신 내용은 유지됩니다.', true);
+      });
+  }
+  function onResult(res) {
+    if (res && res.ok) {
+      store.set(state.keyDone, new Date().toISOString());
+      store.del(state.keyDraft);
+      $('thanksText').textContent = THANKS_MESSAGE;
+      show('screen-done');
+      return;
+    }
+    var code = res && res.code;
+    if (code === 'VALIDATION' && res.errors) {
+      document.querySelectorAll('.q-msg').forEach(function (el) { el.textContent = ''; });
+      res.errors.forEach(function (e) { var f = fieldById[e.id]; var qid = f ? f.qid : e.id; if ($('q-' + qid)) setErr(qid, e.message); });
+      var firstErr = document.querySelector('.q.err'); if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('응답을 확인해주세요');
+    } else if (code === 'CLOSED' || code === 'NOT_STARTED') {
+      blocked(code === 'CLOSED' ? '접수가 종료되었습니다' : '아직 접수 전입니다', res.message || '');
+    } else if (code === 'SCHEMA_MISMATCH') {
+      blocked('설문이 갱신되었습니다', (res.message || '') + ' 입력 내용은 새로고침 후 다시 작성해주셔야 합니다.', '↻', true);
+    } else {
+      showAlert((res && res.message) || '저장에 실패했습니다. 잠시 후 다시 시도해주세요.', true);
+    }
+  }
+  function blocked(title, text, ico, reload) {
+    $('blockTitle').textContent = title; $('blockText').textContent = text;
+    $('blockIco').textContent = ico || '!';
+    $('btnReload').classList.toggle('hidden', !reload);
+    show('screen-blocked');
+  }
+
+  /* ── 시작 ── */
+  function start(status) {
+    state.isTest = !!status.test;
+    var ns = 'sf2026bkk' + (state.isTest ? ':test' : '');
+    state.keyDone = ns + ':done'; state.keyDraft = ns + ':draft';
+    if (state.isTest) $('testBadge').classList.remove('hidden');
+
+    if (status.schema && String(status.schema) !== SCHEMA_VERSION) {
+      return blocked('설문이 갱신되었습니다', '최신 설문 화면을 불러오기 위해 다시 시도를 눌러주세요.', '↻', true);
+    }
+    if (status.state === 'setup') return blocked('준비 중입니다', status.message || '', '!', true);
+    if (status.state === 'before') return blocked('아직 접수 전입니다', status.message || '');
+    if (status.state === 'closed') return blocked('접수가 종료되었습니다', status.message || '');
+    if (store.get(state.keyDone)) return blocked('이미 참여하셨습니다', '이 브라우저에서는 설문이 이미 제출되었습니다. 참여해 주셔서 감사합니다.', '✓');
+
+    loadDraft();
+    render();
+    show('screen-intro');
+  }
+  function init() {
+    $('title').textContent = SURVEY_TITLE.replace(/^2026 Summer Festival\s*/, '');
+    $('noticeText').textContent = INTRO_NOTICE;
+    $('metaCount').textContent = '필수 문항 ' + reqQ + '개 · 선택(주관식) ' + optQ + '개';
+    $('authorLine').textContent = AUTHOR_LINE;
+    $('btnStart').addEventListener('click', function () { show('screen-form'); });
+    $('btnSubmit').addEventListener('click', submit);
+    $('btnReload').addEventListener('click', function () { location.reload(); });
+
+    var url = apiUrl + (apiUrl.indexOf('?') >= 0 ? '&' : '?') + 'api=status' + (tParam ? '&t=' + encodeURIComponent(tParam) : '') + '&_=' + Date.now();
+    apiFetch(url, { method: 'GET' }, 25000)
+      .then(function (st) { if (!st || !st.ok) throw new Error((st && st.message) || '상태 확인 실패'); start(st); })
+      .catch(function (err) {
+        blocked('서버에 연결할 수 없습니다', (err && err.message ? err.message : '') + ' 잠시 후 다시 시도해주세요.', '!', true);
+      });
+  }
+  init();
+})();
+</script>
 </body>
 </html>
