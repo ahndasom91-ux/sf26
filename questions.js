@@ -15,7 +15,7 @@
  */
 
 var SURVEY_TITLE = '2026 Summer Festival 만족도 조사 [방콕]';
-var SCHEMA_VERSION = '3';
+var SCHEMA_VERSION = '4';
 
 /** 설문 페이지 주소(GitHub Pages). Apps Script 링크로 들어온 사람은 이 주소로 보낸다 */
 var PAGE_URL = 'https://ahndasom91-ux.github.io/sf26/';
