@@ -252,8 +252,7 @@
     QUESTIONS.forEach(function (q) {
       if (q.type !== 'text' && q.points !== lastPoints) {
         lastPoints = q.points;
-        html += '<div class="section-title">' + (q.points === 10 ? '총평 · 1~10점' : '세부 평가 · 1~5점') + '<small>' +
-          (q.points === 10 ? '1점(매우 불만족)부터 10점(매우 만족)까지 점수를 선택해주세요.' : '1점(매우 불만족)부터 5점(매우 만족)까지 선택해주세요.') + '</small></div>';
+        html += '<div class="section-title">점수 평가 · 1~' + q.points + '점<small>1점(매우 불만족)부터 ' + q.points + '점(매우 만족)까지 점수를 선택해주세요.</small></div>';
       }
       var isSub = /-/.test(q.no);
       var req = q.required ? '<span class="q-req" aria-label="필수">*</span>' : '<span class="q-opt">(선택)</span>';
