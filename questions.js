@@ -122,6 +122,15 @@ var QUESTIONS = [
     col: 'Q10 희망 여행지' }
 ];
 
+/** 묶음 문항의 항목을 화면·집계에 보여줄 순서로 (sections 가 있으면 구분 순서대로, 구분 없는 항목은 맨 뒤) */
+function displayItems(q) {
+  if (!q.sections) return q.items.slice();
+  var out = [];
+  q.sections.forEach(function (sec) { q.items.forEach(function (it) { if (it.sec === sec) out.push(it); }); });
+  q.items.forEach(function (it) { if (q.sections.indexOf(it.sec) < 0) out.push(it); });
+  return out;
+}
+
 /** 응답 시트 열 정의(평탄화): group 의 항목은 각각 별도 열 */
 function fieldList() {
   var list = [];
