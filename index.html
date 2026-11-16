@@ -100,6 +100,13 @@
   .sub-item:first-child { border-top: 0; padding-top: 0; }
   .sub-label { font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .sub-label .picked { margin: 0; font-size: 13px; text-align: right; }
+  .sub-note { margin: -2px 0 10px; padding: 8px 10px; border-radius: 8px; background: #fff7ea; border: 1px solid #f6dfbd; color: #7a4a0a; font-size: 13px; line-height: 1.45; }
+  .scale-ends { gap: 10px; }
+  .scale-ends span:last-child { text-align: right; }
+  /* 묶음 문항의 구분 (골프 / 선택관광 / 자유일정) */
+  .sec { margin-top: 22px; }
+  .sec:first-child { margin-top: 0; }
+  .sec-head { background: var(--brand-soft); color: var(--brand-dark); border-left: 5px solid var(--brand); border-radius: 8px; padding: 8px 12px; font-size: 16px; font-weight: 800; margin-bottom: 12px; }
 
   textarea { width: 100%; border: 2px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; resize: vertical; min-height: 140px; background: #fff; color: var(--ink); }
   textarea:focus { outline: none; border-color: var(--brand); }
@@ -267,13 +274,14 @@
   function qLabel(q) { return (q.no + '. ' + q.title); }
 
   /* ── 렌더링 (모든 문항을 만들어 두고 하나씩만 보여준다) ── */
-  function scaleHtml(id, points, skippable, skipLabel) {
+  function scaleHtml(id, points, skippable, skipLabel, ends) {
+    ends = ends || ['매우 불만족', '매우 만족'];
     var h = '<div class="scale p' + points + '" role="radiogroup" data-id="' + id + '">';
     for (var v = 1; v <= points; v++) {
       var lab = points === 5 ? v + '점 ' + SCALE_LABELS_5[v] : v + '점';
       h += '<button type="button" class="opt" role="radio" aria-checked="false" data-id="' + id + '" data-v="' + v + '" aria-label="' + esc(lab) + '">' + v + '</button>';
     }
-    h += '</div><div class="scale-ends"><span><b>1</b> 매우 불만족</span><span><b>' + points + '</b> 매우 만족</span></div>';
+    h += '</div><div class="scale-ends"><span><b>1</b> ' + esc(ends[0]) + '</span><span><b>' + points + '</b> ' + esc(ends[1]) + '</span></div>';
     if (skippable) h += '<button type="button" class="skip" data-id="' + id + '" data-v="skip">' + esc(skipLabel) + ' (해당 없음)</button>';
     return h;
   }
@@ -290,10 +298,22 @@
         html += scaleHtml(q.id, q.points, false) + '<div class="picked" id="picked-' + q.id + '"></div>';
         html += '<div class="q-hint">점수를 누르면 다음 문항으로 넘어갑니다.</div>';
       } else if (q.type === 'group') {
-        q.items.forEach(function (it) {
-          html += '<div class="sub-item" id="sub-' + it.id + '"><div class="sub-label"><span>' + esc(it.label) + (q.required ? '<span class="q-req">*</span>' : '') + '</span><span class="picked" id="picked-' + it.id + '"></span></div>' +
-            scaleHtml(it.id, q.points, !!q.skippable, q.skipLabel || '') + '</div>';
-        });
+        var itemHtml = function (it) {
+          return '<div class="sub-item" id="sub-' + it.id + '"><div class="sub-label"><span>' + esc(it.label) + (q.required ? '<span class="q-req">*</span>' : '') + '</span><span class="picked" id="picked-' + it.id + '"></span></div>' +
+            (it.note ? '<div class="sub-note">' + esc(it.note) + '</div>' : '') +
+            scaleHtml(it.id, q.points, !!q.skippable, q.skipLabel || '', it.ends) + '</div>';
+        };
+        if (q.sections) {
+          // 구분(골프/선택관광/자유일정)별로 묶어서 표시. 구분이 없는 항목은 맨 뒤
+          q.sections.forEach(function (sec) {
+            html += '<div class="sec"><div class="sec-head">' + esc(sec) + '</div>';
+            q.items.forEach(function (it) { if (it.sec === sec) html += itemHtml(it); });
+            html += '</div>';
+          });
+          q.items.forEach(function (it) { if (q.sections.indexOf(it.sec) < 0) html += itemHtml(it); });
+        } else {
+          q.items.forEach(function (it) { html += itemHtml(it); });
+        }
         html += '<div class="q-hint">모든 항목을 선택한 뒤 다음을 눌러주세요.</div>';
       } else {
         html += '<textarea id="ta-' + q.id + '" class="' + (q.max <= 200 ? 'short' : '') + '" maxlength="' + q.max + '" placeholder="' + (q.required ? '내용을 입력해주세요' : '자유롭게 작성해주세요') + ' (최대 ' + q.max + '자)"></textarea>';

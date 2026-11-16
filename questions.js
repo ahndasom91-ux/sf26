@@ -10,6 +10,8 @@
  * 문항 형식
  *   type 'scale' : 단일 점수. points = 10 (모든 점수 문항은 1~10점)
  *   type 'group' : 항목별 점수(가수별·식당별 등). items[], points. skippable 이면 항목마다 skipLabel(미방문 등) 선택 가능
+ *                  sections[] 가 있으면 화면에서 항목을 item.sec 별로 묶어 그 순서대로 보여준다(시트 열 순서는 items 순서 그대로)
+ *                  item.note = 항목 아래 작은 설명, item.ends = [1점 쪽 문구, 10점 쪽 문구] (기본: 매우 불만족 / 매우 만족)
  *   type 'text'  : 주관식. max = 글자 수 제한. 주관식은 모두 선택(required:false)
  *   no    : 화면 번호 ('1', '2-1' ...; '-' 가 있으면 하위 문항으로 표시)   col : 응답 시트 열 제목   area : 영역 태그
  */
@@ -90,15 +92,20 @@ var QUESTIONS = [
   { id: 'q7', no: '7', area: '관광지', type: 'group', points: 10, required: true, skippable: true, skipLabel: '미참여',
     title: '방문 관광지별로 평가 점수를 매겨주세요.',
     desc: '참여하지 않은 일정은 "미참여"를 선택해주세요.',
+    // 화면에는 sections 순서(골프 → 선택관광 → 자유일정)대로 묶어서 보여준다.
+    // items 의 순서·id·col 은 응답 시트 열 순서이므로 바꾸지 않는다 (바꾸면 응답 탭이 새로 만들어진다)
+    sections: ['골프', '선택관광', '자유일정'],
     items: [
-      { id: 'q7_1', label: '(골프) 로얄방파인',      col: 'Q7-1 관광지 (골프) 로얄방파인' },
-      { id: 'q7_2', label: '(골프) 카스카타',        col: 'Q7-2 관광지 (골프) 카스카타' },
-      { id: 'q7_3', label: '(선택) 자유일정',        col: 'Q7-3 관광지 (선택) 자유일정' },
-      { id: 'q7_4', label: '(선택) 아유타야+크루즈', col: 'Q7-4 관광지 (선택) 아유타야+크루즈' },
-      { id: 'q7_5', label: '(선택) 마하나콘+마사지', col: 'Q7-5 관광지 (선택) 마하나콘+마사지' },
-      { id: 'q7_6', label: '(선택) 고급스파',        col: 'Q7-6 관광지 (선택) 고급스파' },
-      { id: 'q7_7', label: '(선택) 매끌렁+담넌사',   col: 'Q7-7 관광지 (선택) 매끌렁+담넌사' },
-      { id: 'q7_8', label: '(선택) 롱테일보트',      col: 'Q7-8 관광지 (선택) 롱테일보트' }
+      { id: 'q7_1', sec: '골프',     label: '로얄방파인',      col: 'Q7-1 관광지 (골프) 로얄방파인' },
+      { id: 'q7_2', sec: '골프',     label: '카스카타',        col: 'Q7-2 관광지 (골프) 카스카타' },
+      { id: 'q7_3', sec: '자유일정', label: '자유일정',        col: 'Q7-3 관광지 (선택) 자유일정',
+        note: '자유일정이 만족스러웠다면 10점, 아쉬웠다면(선택관광이 더 나았겠다) 1점에 가깝게 골라주세요.',
+        ends: ['아쉬웠다 (선택관광 선호)', '만족스러웠다'] },
+      { id: 'q7_4', sec: '선택관광', label: '아유타야+크루즈', col: 'Q7-4 관광지 (선택) 아유타야+크루즈' },
+      { id: 'q7_5', sec: '선택관광', label: '마하나콘+마사지', col: 'Q7-5 관광지 (선택) 마하나콘+마사지' },
+      { id: 'q7_6', sec: '선택관광', label: '고급스파',        col: 'Q7-6 관광지 (선택) 고급스파' },
+      { id: 'q7_7', sec: '선택관광', label: '매끌렁+담넌사',   col: 'Q7-7 관광지 (선택) 매끌렁+담넌사' },
+      { id: 'q7_8', sec: '선택관광', label: '롱테일보트',      col: 'Q7-8 관광지 (선택) 롱테일보트' }
     ] },
 
   /* ── 8. 이동 ── */
@@ -122,7 +129,8 @@ function fieldList() {
     if (q.type === 'group') {
       q.items.forEach(function (it, i) {
         list.push({ id: it.id, qid: q.id, col: it.col, type: 'scale', points: q.points, area: q.area, no: q.no + '-' + (i + 1),
-                    required: !!q.required, skippable: !!q.skippable, skipLabel: q.skipLabel || '', label: q.title + ' — ' + it.label });
+                    required: !!q.required, skippable: !!q.skippable, skipLabel: q.skipLabel || '',
+                    label: q.title + ' — ' + (it.sec && it.sec !== it.label ? '(' + it.sec + ') ' : '') + it.label });
       });
     } else {
       list.push({ id: q.id, qid: q.id, col: q.col, type: q.type, points: q.points, area: q.area, no: q.no,
